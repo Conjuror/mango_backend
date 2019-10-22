@@ -2,6 +2,7 @@ package org.mozilla.msrp.platform.vertical.content
 
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.apache.commons.beanutils.ConversionException
 import org.mozilla.msrp.platform.util.logger
 import org.mozilla.msrp.platform.vertical.content.data.Category
 import org.mozilla.msrp.platform.vertical.content.data.parseContent
@@ -100,7 +101,18 @@ class ContentService @Inject constructor(private val contentRepository: ContentR
             val message = "[Shopping][jsonProcessingException]==== uploading file: ${other.originalFilename}"
             log.error("$message====$jsonProcessingException")
             return ContentServiceUploadResult.Fail(message)
+
+        } catch (e: NumberFormatException) {
+            val message = "[Shopping][NumberFormatException]==== uploading file: ${other.originalFilename}"
+            log.error("$message====$e")
+            return ContentServiceUploadResult.Fail("$message<BR>Error====<BR>$e")
+
+        } catch (e: ConversionException) {
+            val message = "[Shopping][ConversionException]==== uploading file: ${other.originalFilename}"
+            log.error("$message====$e")
+            return ContentServiceUploadResult.Fail("$message<BR>Error====<BR>$e")
         }
+
     }
 
     fun getPublish(publishDocId: String): PublishDoc? {
