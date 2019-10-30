@@ -2,6 +2,11 @@
   <version>1</version>
   <threadsafe>true</threadsafe>
   <runtime>java8</runtime>
+  <instance-class>F4_1G</instance-class>
+  <automatic-scaling>
+    <min-instances>8</min-instances>
+    <max-instances>100</max-instances>
+  </automatic-scaling>
   <system-properties>
     @SPRING_PROFILES_ACTIVE@
   </system-properties>
