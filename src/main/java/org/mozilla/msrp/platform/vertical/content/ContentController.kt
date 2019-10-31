@@ -23,6 +23,9 @@ class ContentController @Inject constructor(private val contentService: ContentS
     @Inject
     lateinit var mapper: ObjectMapper
 
+    @Inject
+    private lateinit var jwtHelper: JwtHelper
+
     @RequestMapping("/api/v1/content")
     fun getContent(
             @RequestParam(value = "category") category: String,
@@ -43,7 +46,7 @@ class ContentController @Inject constructor(private val contentService: ContentS
             @RequestParam editor: String,
             @RequestParam(required = false) schedule: String? = ""
     ): ResponseEntity<String> {
-        if (JwtHelper.verify(token)?.role != JwtHelper.ROLE_PUBLISH_ADMIN) {
+        if (jwtHelper.verify(token)?.role != JwtHelper.ROLE_PUBLISH_ADMIN) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No Permission")
         }
         return when (val result = contentService.publish(publishDocId, editor, schedule)) {
@@ -63,7 +66,7 @@ class ContentController @Inject constructor(private val contentService: ContentS
             @RequestParam(value = "other") other: MultipartFile,
             response: HttpServletResponse  // need HttpServletResponse to redirect
     ): ResponseEntity<String> {
-        val verify = JwtHelper.verify(token)
+        val verify = jwtHelper.verify(token)
         if (verify?.role != JwtHelper.ROLE_PUBLISH_ADMIN) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No Permission")
         }

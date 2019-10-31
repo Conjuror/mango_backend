@@ -21,7 +21,7 @@ public class FirefoxAccountServiceInfo {
         return clientId;
     }
 
-    String getClientSecret() {
+    public String getClientSecret() {
         return clientSecret;
     }
 

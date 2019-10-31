@@ -14,11 +14,14 @@ import javax.inject.Inject
 @Controller
 class AdminPublishController @Inject constructor(val conteService: ContentService) {
 
+    @Inject
+    private lateinit var jwtHelper: JwtHelper
+
     @GetMapping("/api/v1/admin/publish")
     fun adminPublish(
             @RequestParam token: String,
             model: Model): String {
-        val role = JwtHelper.verify(token)?.role
+        val role = jwtHelper.verify(token)?.role
         if (role == JwtHelper.ROLE_PUBLISH_ADMIN) {
             model.addAttribute("token", token)
             return "publish"
@@ -32,7 +35,7 @@ class AdminPublishController @Inject constructor(val conteService: ContentServic
             @RequestParam publishDocId: String,
             model: Model
     ): String {
-        val role = JwtHelper.verify(token)?.role
+        val role = jwtHelper.verify(token)?.role
         if (role == JwtHelper.ROLE_PUBLISH_ADMIN) {
             model.addAttribute("token", token)
             val publishDoc = conteService.getPublish(publishDocId)

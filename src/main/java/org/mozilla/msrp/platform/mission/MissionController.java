@@ -23,6 +23,9 @@ public class MissionController {
     @Inject
     private MissionService missionService;
 
+    @Inject
+    private JwtHelper jwtHelper;
+
     /**
      * Fetch user requested missions, and aggregate data that is needed by client
      * <p>
@@ -140,7 +143,7 @@ public class MissionController {
             @RequestParam(value = "messages[]") String[] messages,
             @RequestParam int minVersion) {
 
-        Auth verify = JwtHelper.verify(token);
+        Auth verify = jwtHelper.verify(token);
         if (verify == null || !JwtHelper.ROLE_MSRP_ADMIN.equals(verify.getRole())) {
             return new ResponseEntity("No Permission", HttpStatus.UNAUTHORIZED);
         }

@@ -34,6 +34,10 @@ sealed class CouponUploadResponse {
 class RedeemController @Inject constructor(val rewardRepository: RewardRepository) {
 
     private var logger = logger()
+
+    @Inject
+    private lateinit var jwtHelper: JwtHelper
+
     /**
      * Get redeem code if possible.
      * Return the failing reason from the service.
@@ -91,7 +95,7 @@ class RedeemController @Inject constructor(val rewardRepository: RewardRepositor
                                @RequestParam("mid") mid: String,
                                @RequestParam("expiredDate") expiredDate: String,
                                @RequestParam(required = false) clear: Boolean = false): ResponseEntity<CouponUploadResponse> {
-        if (JwtHelper.verify(token)?.role != JwtHelper.ROLE_MSRP_ADMIN) {
+        if (jwtHelper.verify(token)?.role != JwtHelper.ROLE_MSRP_ADMIN) {
             logger.warn("[Reward][uploadCoupons] Role violation: token[$token] couponName[$couponName] missionType[$missionType] mid[$mid]")
             return ResponseEntity(CouponUploadResponse.Fail("No Permission"), HttpStatus.UNAUTHORIZED)
         }
