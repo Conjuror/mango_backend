@@ -153,9 +153,10 @@ appengineStage.doLast {
 
 
 ext.getGaeWebXmlConfig = {
-
     def mode = getDeployConfig().mode
-
+    def gaeInstanceClass = 'F1'
+    def maxInstances = '2'
+    def minInstances = '1'
     def springProfilesActive = ''' 
             <property name="spring.profiles.active" value="dev" />
         '''
@@ -168,17 +169,21 @@ ext.getGaeWebXmlConfig = {
         springProfilesActive = ''' 
             <property name="spring.profiles.active" value="nightly" />
         '''
+        maxInstances = '4'
+        minInstances = '2'
     } else if (mode == 'prod') {
         springProfilesActive = ''' 
             <property name="spring.profiles.active" value="prod" />
         '''
-    } else {
-        // use dev setting as default
-        springProfilesActive = ''' 
-            <property name="spring.profiles.active" value="dev" />
-        '''    }
+        gaeInstanceClass = 'F4_1G'
+        maxInstances = '100'
+        minInstances = '8'
+    }
 
     def props = [
+            GAE_INSTANCE_CLASS    : gaeInstanceClass,
+            MAX_INSTANCES         : maxInstances,
+            MIN_INSTANCES         : minInstances,
             SPRING_PROFILES_ACTIVE: springProfilesActive
     ]
     return props
