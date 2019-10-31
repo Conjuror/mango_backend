@@ -8,18 +8,4 @@ class PublishDoc(
         var locale: String? = null,
         var tag: String? = null,
         var created_timestamp: Long? = null,
-        var data: Category? = null
-) {
-    fun isValid(): Boolean {
-        if (category.isNullOrBlank() ||
-                locale.isNullOrBlank() ||
-                created_timestamp == null ||
-                data == null
-        ) {
-            return false
-        }
-
-        return true
-    }
-
-}
+        var data: Category? = null)
