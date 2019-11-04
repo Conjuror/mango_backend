@@ -1,6 +1,8 @@
 package org.mozilla.msrp.platform.vertical.content
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.common.cache.CacheBuilder
+import com.google.common.cache.CacheLoader
 import org.mozilla.msrp.platform.common.auth.JwtHelper
 import org.mozilla.msrp.platform.util.logger
 import org.mozilla.msrp.platform.vertical.content.data.ContentSubcategory
@@ -12,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestMethod
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.servlet.http.HttpServletResponse
 
@@ -26,15 +30,36 @@ class ContentController @Inject constructor(private val contentService: ContentS
     @Inject
     private lateinit var jwtHelper: JwtHelper
 
+    companion object {
+        private const val CACHE_SIZE = 10L
+        private const val CACHE_TIME_MINUTES = 15L
+    }
+
+    private val cacheContent = CacheBuilder.newBuilder()
+            .maximumSize(CACHE_SIZE)
+            .refreshAfterWrite(CACHE_TIME_MINUTES, TimeUnit.MINUTES)
+            .recordStats()
+            .build(object : CacheLoader<ContentServiceQueryParam, ContentServiceQueryResult>() {
+                override fun load(param: ContentServiceQueryParam): ContentServiceQueryResult {
+                    return contentService.getContent(param.category, param.locale)
+                }
+            })
+
+
     @RequestMapping("/api/v1/content")
     fun getContent(
             @RequestParam(value = "category") category: String,
             @RequestParam(value = "locale") locale: String
     ): ResponseEntity<Any> {
-        return when (val result = contentService.getContent(category, locale)) {
-            is ContentServiceQueryResult.InvalidParam -> ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result.message)
-            is ContentServiceQueryResult.Success -> ResponseEntity.status(HttpStatus.OK).body(ContentResponse(result.version, result.tag, result.data.subcategories))
-            is ContentServiceQueryResult.Fail -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result.message)
+        return try {
+            when (val result = cacheContent.get(ContentServiceQueryParam(category, locale))) {
+                is ContentServiceQueryResult.InvalidParam -> ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result.message)
+                is ContentServiceQueryResult.Success -> ResponseEntity.status(HttpStatus.OK).body(ContentResponse(result.version, result.tag, result.data.subcategories))
+                is ContentServiceQueryResult.Fail -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result.message)
+            }
+        } catch (e: ExecutionException) {
+            log.error("Content: Cache: $category $locale Exception:$e")
+            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Please try again")
         }
     }
 
@@ -63,8 +88,7 @@ class ContentController @Inject constructor(private val contentService: ContentS
             @RequestParam(value = "locale") locale: String,
             @RequestParam(value = "tag") tag: String,
             @RequestParam(value = "banner", required = false) banner: MultipartFile?,
-            @RequestParam(value = "other") other: MultipartFile,
-            response: HttpServletResponse  // need HttpServletResponse to redirect
+            @RequestParam(value = "other") other: MultipartFile
     ): ResponseEntity<String> {
         val verify = jwtHelper.verify(token)
         if (verify?.role != JwtHelper.ROLE_PUBLISH_ADMIN) {
@@ -98,6 +122,10 @@ class ContentController @Inject constructor(private val contentService: ContentS
 
 }
 
+class ContentServiceQueryParam(
+        val category: String,
+        val locale: String
+)
 class ContentResponse(
         val version: Long,
         val tag: String,
