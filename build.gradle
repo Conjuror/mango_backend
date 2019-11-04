@@ -93,7 +93,7 @@ dependencyManagement {
 }
 
 // appengine versions for various environment
-def gaeVersions = "0-12"
+def gaeVersions = "0-13"
 
 ext.getDeployConfig = { ->
 
