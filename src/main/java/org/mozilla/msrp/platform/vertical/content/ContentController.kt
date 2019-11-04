@@ -17,7 +17,6 @@ import org.springframework.web.multipart.MultipartFile
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
-import javax.servlet.http.HttpServletResponse
 
 
 @RestController
@@ -92,8 +91,11 @@ class ContentController @Inject constructor(private val contentService: ContentS
     ): ResponseEntity<String> {
         val verify = jwtHelper.verify(token)
         if (verify?.role != JwtHelper.ROLE_PUBLISH_ADMIN) {
+            log.warn("No permission: uploadContent: $category/$locale/$tag/$banner/$other")
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No Permission")
         }
+        log.info("Success: uploadContent: $category/$locale/$tag/$banner/$other")
+
         return when (val result = contentService.uploadContent(category, locale, other, banner, tag)) {
             is ContentServiceUploadResult.Success -> {
                 val preview = "/api/v1/admin/publish/preview?token=$token&publishDocId=${result.publishDocId}"

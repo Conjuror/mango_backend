@@ -13,7 +13,7 @@ import javax.inject.Named
 @Named
 class JwtHelper @Inject constructor(firefoxAccountServiceInfo: FirefoxAccountServiceInfo) {
 
-    private val SECRET = firefoxAccountServiceInfo.clientSecret   // the secret is must be the same
+    private val SECRET = firefoxAccountServiceInfo.clientSecret   // the secret must be the same among all instances
     private val algorithm = Algorithm.HMAC256(SECRET)
     private val verifier = JWT.require(algorithm).withIssuer(ISSUER).build()
     private val log = logger()
@@ -29,10 +29,11 @@ class JwtHelper @Inject constructor(firefoxAccountServiceInfo: FirefoxAccountSer
     }
 
     fun createToken(role: String, email: String): String? {
-        try {
+        return try {
+            log.info("Admin login createToken request")
 
             val algorithm = Algorithm.HMAC256(SECRET)
-            return JWT.create()
+            JWT.create()
                     .withExpiresAt(Date(System.currentTimeMillis() + EXPIRATION))
                     .withIssuer(ISSUER)
                     .withClaim(ROLE, role)
@@ -40,12 +41,13 @@ class JwtHelper @Inject constructor(firefoxAccountServiceInfo: FirefoxAccountSer
                     .sign(algorithm)
         } catch (exception: JWTCreationException) {
             log.error("[JwtHelper][createToken]====$exception")
-            return null
+            null
 
         }
     }
 
     fun verify(token: String): Auth? {
+        log.info("Admin login verify request")
         return try {
             return verifier.verify(token).let {
                 Auth(it.getClaim(ROLE).asString(), it.getClaim(EMAIL).asString())

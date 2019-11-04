@@ -115,6 +115,8 @@ class ContentRepository @Inject constructor(private var storage: Storage,
                 publishDoc = snapshot?.getUnchecked()?.toObject(PublishDoc::class.java)
 
                 transaction.update(docRef, "publish_timestamp", timestamp)
+                log.info("Success: publish: $publishDocId/$editor/$schedule")
+
             }.getUnchecked()
 
             if (publishDoc == null) {
