@@ -176,7 +176,7 @@ ext.getGaeWebXmlConfig = {
             <property name="spring.profiles.active" value="prod" />
         '''
         gaeInstanceClass = 'F4_1G'
-        maxInstances = '100'
+        maxInstances = '24'
         minInstances = '8'
     }
 
