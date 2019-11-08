@@ -23,9 +23,11 @@ class ContentService @Inject constructor(private val contentRepository: ContentR
             "apkGame" to "game_apk",
             "html5Game" to "game_html5",
             "shoppingDeal" to "shopping_deal",
-            "shoppingCoupon" to "shopping_coupon")
+            "shoppingCoupon" to "shopping_coupon",
+            "travelExplore" to "travel_explore",
+            "travelBucketList" to "travel_bucket_list")
 
-    private val supportLocale = listOf("id-ID", "en-IN", "all")
+    private val supportLocale = listOf("id-ID", "en-IN", "all", "zh-HANT", "en-US")
 
     // check category and locale. If they are valid, return the safe category. (keep locale as is)
     private fun safeCategory(category: String, locale: String): String? {
