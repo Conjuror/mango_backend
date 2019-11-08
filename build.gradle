@@ -177,7 +177,7 @@ ext.getGaeWebXmlConfig = {
         '''
         gaeInstanceClass = 'F4_1G'
         maxInstances = '24'
-        minInstances = '8'
+        minInstances = '4'
     }
 
     def props = [
