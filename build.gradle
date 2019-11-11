@@ -79,6 +79,8 @@ dependencies {
 
     implementation "com.opencsv:opencsv:4.6"
 
+    implementation 'com.google.apis:google-api-services-youtube:v3-rev212-1.25.0'
+
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation "org.junit.jupiter:junit-jupiter-engine:5.5.1"
     testImplementation "org.mockito:mockito-core:3.0.0"
