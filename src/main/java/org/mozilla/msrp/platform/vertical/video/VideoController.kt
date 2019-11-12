@@ -2,7 +2,6 @@ package org.mozilla.msrp.platform.vertical.video
 
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
-import org.mozilla.msrp.platform.common.property.VideoProperties
 import org.mozilla.msrp.platform.util.logger
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -14,8 +13,8 @@ import javax.inject.Inject
 
 @RestController
 class VideoController @Inject constructor(
-        private val youtubeService: YoutubeService,
-        private val videoProperties: VideoProperties) {
+        private val youtubeService: YoutubeService
+) {
 
     private val log = logger()
 
@@ -34,6 +33,7 @@ class VideoController @Inject constructor(
         log.info("[VIDEO]====cache videos key[${key}]")
 
         if (cache == null || cache.isEmpty()) {
+            log.warn("[VIDEO]====no cache found")
             return ResponseEntity(listOf(), HttpStatus.NO_CONTENT)
         }
         log.info("[VIDEO]====cache videos [${cache.size}]")
@@ -54,8 +54,8 @@ class VideoController @Inject constructor(
     }
 
     private val cacheVideos = CacheBuilder.newBuilder()
-            .maximumSize(videoProperties.cacheSize)
-            .refreshAfterWrite(videoProperties.cacheTtl, TimeUnit.HOURS)
+            .maximumSize(cacheSize)
+            .refreshAfterWrite(cacheTtl, TimeUnit.HOURS)
             .recordStats()
             .build(
                     object : CacheLoader<String, List<VideoItem>>() {
@@ -71,5 +71,7 @@ class VideoController @Inject constructor(
 
     companion object {
         private const val delimiters = "=="
+        private const val cacheSize: Long = 100L
+        private const val cacheTtl: Long = 24L
     }
 }
