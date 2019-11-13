@@ -24,5 +24,6 @@ data class MissionListItem(
         val missionType: String,
         val joinEndDate: Long,
         val imageUrl: String,
-        val rewardExpiredDate: Long
+        val rewardExpiredDate: Long,
+        val parameters: Map<String, Any>    // daily mission will only expose one key: totalDays
 )

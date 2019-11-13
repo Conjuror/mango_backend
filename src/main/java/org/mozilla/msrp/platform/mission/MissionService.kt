@@ -17,7 +17,8 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeParseException
-import java.util.*
+import java.util.ArrayList
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Named
 
@@ -172,6 +173,7 @@ class MissionService @Inject constructor(
             redeemEndInstant = stringToLocalDateTime(missionDoc.redeemEndDate).atZone(zone).toInstant()
         }
 
+
         val rewardExpiredDate = joinDoc?.rewardDocId?.let { rewardDocId ->
             rewardRepository.getRewardExpiredDate(missionDoc.rewardType, rewardDocId)
         } ?: Long.MIN_VALUE
@@ -192,7 +194,9 @@ class MissionService @Inject constructor(
                 missionType = missionDoc.missionType,
                 joinEndDate = joinEndInstant.toEpochMilli(),
                 imageUrl = missionDoc.imageUrl,
-                rewardExpiredDate = rewardExpiredDate
+                rewardExpiredDate = rewardExpiredDate,
+                parameters = mapOf("totalDays" to (missionDoc.missionParams["totalDays"]
+                        ?: 0)) // daily mission will only expose one key: totalDays
         )
     }
 
