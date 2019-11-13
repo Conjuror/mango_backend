@@ -24,8 +24,7 @@ class ContentService @Inject constructor(private val contentRepository: ContentR
             "html5Game" to "game_html5",
             "shoppingDeal" to "shopping_deal",
             "shoppingCoupon" to "shopping_coupon",
-            "travelExplore" to "travel_explore",
-            "travelBucketList" to "travel_bucket_list")
+            "travelExplore" to "travel_explore")
 
     private val supportLocale = listOf("id-ID", "en-IN", "all", "zh-HANT", "en-US")
 
