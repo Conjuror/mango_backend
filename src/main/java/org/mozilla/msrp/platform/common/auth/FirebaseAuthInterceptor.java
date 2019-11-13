@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
+import io.opencensus.common.Scope;
+import io.opencensus.trace.Tracer;
+import io.opencensus.trace.Tracing;
 import lombok.extern.log4j.Log4j2;
 import org.mozilla.msrp.platform.common.ErrorMessage;
 import org.mozilla.msrp.platform.user.UserRepository;
@@ -28,6 +31,7 @@ import java.util.Locale;
 public class FirebaseAuthInterceptor implements HandlerInterceptor {
 
     private static final String HEADER_BEAR = "Bearer ";
+    private static final Tracer tracer = Tracing.getTracer();
 
     @Inject
     ObjectMapper mapper;
@@ -37,70 +41,78 @@ public class FirebaseAuthInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        try (Scope ss = tracer.spanBuilder("preHandle").startScopedSpan()) {
+            tracer.getCurrentSpan().addAnnotation("preHandle -----start");
 
-        String authorization = request.getHeader("Authorization");
 
-        if (authorization != null && authorization.contains(HEADER_BEAR)) {
+            String authorization = request.getHeader("Authorization");
 
-            String jwt = authorization.replace(HEADER_BEAR, "");
+            if (authorization != null && authorization.contains(HEADER_BEAR)) {
 
-            try {
-                FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(jwt);
+                String jwt = authorization.replace(HEADER_BEAR, "");
 
-                if (decodedToken.getUid().isEmpty()) {
-                    log.warn("preHandle: decodedToken.getUid().isEmpty()");
+                try {
+                    FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(jwt);
 
-                    handleThrowable(response, HttpStatus.UNAUTHORIZED, "No such user");
+                    if (decodedToken.getUid().isEmpty()) {
+                        log.warn("preHandle: decodedToken.getUid().isEmpty()");
 
-                    return false;
+                        handleThrowable(response, HttpStatus.UNAUTHORIZED, "No such user");
 
-                } else {
-                    String userId = getUserId(decodedToken);
-                    if (userId == null) {
-                        log.info("preHandle: createAnonymousUser");
-                        // the user document is not ready. Let's create it now.
-                        userId = userRepository.createAnonymousUser(decodedToken.getUid());
-                        log.info("preHandle: createAnonymousUser done:" + userId);
-                    } else if (userRepository.isUserSuspended(userId)) {
-                        log.warn("preHandle: user suspended uid={}", userId);
-                        handleThrowable(response, HttpStatus.FORBIDDEN, "user suspended");
                         return false;
+
+                    } else {
+                        String userId = getUserId(decodedToken);
+                        if (userId == null) {
+                            log.info("preHandle: createAnonymousUser");
+                            // the user document is not ready. Let's create it now.
+                            userId = userRepository.createAnonymousUser(decodedToken.getUid());
+                            log.info("preHandle: createAnonymousUser done:" + userId);
+                        } else if (userRepository.isUserSuspended(userId)) {
+                            log.warn("preHandle: user suspended uid={}", userId);
+                            handleThrowable(response, HttpStatus.FORBIDDEN, "user suspended");
+                            return false;
+                        }
+
+                        log.info("preHandle: success:" + userId);
+
+                        Locale locale = request.getLocale();
+                        request.setAttribute("uid", userId);
+                        request.setAttribute("locale", locale);
+                        log.info("preHandle: setAttribute(uid={}, locale={})", userId, locale);
+
+                        return true;
                     }
 
-                    log.info("preHandle: success:" + userId);
+                } catch (IllegalArgumentException e) {
+                    logThrowable("illegal token format", e);
+                    handleThrowable(response, HttpStatus.BAD_REQUEST, "Illegal token format");
+                    return false;
 
-                    Locale locale = request.getLocale();
-                    request.setAttribute("uid", userId);
-                    request.setAttribute("locale", locale);
-                    log.info("preHandle: setAttribute(uid={}, locale={})", userId, locale);
+                } catch (FirebaseAuthException e) {
+                    logThrowable("unauthorized token", e);
+                    handleThrowable(response, HttpStatus.UNAUTHORIZED, "Unauthorized token");
+                    return false;
 
-                    return true;
+                } catch (Throwable throwable) {
+                    logThrowable("unexpected exception", throwable);
+                    handleThrowable(response, HttpStatus.INTERNAL_SERVER_ERROR, "Error loading DB");
+
+                    return false;
+                } finally {
+                    tracer.getCurrentSpan().addAnnotation("preHandle -----end");
                 }
 
-            } catch (IllegalArgumentException e) {
-                logThrowable("illegal token format", e);
-                handleThrowable(response, HttpStatus.BAD_REQUEST, "Illegal token format");
-                return false;
+            } else {
 
-            } catch (FirebaseAuthException e) {
-                logThrowable("unauthorized token", e);
-                handleThrowable(response, HttpStatus.UNAUTHORIZED, "Unauthorized token");
-                return false;
+                log.info("abnormal access to endpoint: {}", request.getRequestURI());
 
-            } catch (Throwable throwable) {
-                logThrowable("unexpected exception", throwable);
-                handleThrowable(response, HttpStatus.INTERNAL_SERVER_ERROR, "Error loading DB");
+                handleThrowable(response, HttpStatus.UNAUTHORIZED, "Please login first");
 
+                tracer.getCurrentSpan().addAnnotation("preHandle -----end");
                 return false;
             }
 
-        } else {
-
-            log.info("abnormal access to endpoint: {}", request.getRequestURI());
-
-            handleThrowable(response, HttpStatus.UNAUTHORIZED, "Please login first");
-
-            return false;
         }
     }
 

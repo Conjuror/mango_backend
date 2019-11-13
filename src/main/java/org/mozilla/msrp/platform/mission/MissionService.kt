@@ -1,5 +1,7 @@
 package org.mozilla.msrp.platform.mission
 
+import io.opencensus.common.Scope
+import io.opencensus.trace.Tracing
 import org.mozilla.msrp.platform.common.getMessageOrEmpty
 import org.mozilla.msrp.platform.common.getMessageOrNull
 import org.mozilla.msrp.platform.common.isProd
@@ -7,6 +9,7 @@ import org.mozilla.msrp.platform.firestore.stringToLocalDateTime
 import org.mozilla.msrp.platform.mission.qualifier.MissionProgressDoc
 import org.mozilla.msrp.platform.mission.qualifier.MissionQualifier
 import org.mozilla.msrp.platform.redward.RewardRepository
+import org.mozilla.msrp.platform.user.RssApiConfiguration
 import org.mozilla.msrp.platform.util.logger
 import org.slf4j.Logger
 import org.springframework.context.MessageSource
@@ -45,20 +48,27 @@ class MissionService @Inject constructor(
     lateinit var environment: Environment
 
     private val log: Logger = logger()
-
+    companion object{
+        private val tracer = Tracing.getTracer()
+    }
     fun getMissionsByGroupId(uid: String, groupId: String, zone: ZoneId, locale: Locale): List<MissionListItem> {
         return if (isSuspiciousUser) {
             ArrayList()
 
         } else {
-            this.missionRepository.getMissionsByGroupId(groupId)
-                    .filter { isMissionValid(it) }
-                    .filter {
-                        val joinStatus = missionRepository.getJoinStatus(uid, it.missionType, it.mid)
-                        val joinCount = missionRepository.getJoinCount(it.missionType, it.mid)
-                        isMissionAvailableForShowing(uid, it, joinStatus, joinCount, clock, zone)
-                    }
-                    .map { aggregateMissionListItem(uid, it, zone, locale) }
+            tracer.spanBuilder("getMissionsByGroupId").startScopedSpan().use { ss: Scope ->
+                tracer.currentSpan.addAnnotation("getMissionsByGroupId -----start")
+                val list = this.missionRepository.getMissionsByGroupId(groupId)
+                        .filter { isMissionValid(it) }
+                        .filter {
+                            val joinStatus = missionRepository.getJoinStatus(uid, it.missionType, it.mid)
+                            val joinCount = missionRepository.getJoinCount(it.missionType, it.mid)
+                            isMissionAvailableForShowing(uid, it, joinStatus, joinCount, clock, zone)
+                        }
+                        .map { aggregateMissionListItem(uid, it, zone, locale) }
+                tracer.currentSpan.addAnnotation("getMissionsByGroupId -----end")
+                list
+            }
         }
     }
 

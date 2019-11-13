@@ -7,6 +7,11 @@ import com.google.cloud.storage.StorageOptions;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.cloud.FirestoreClient;
+import io.opencensus.common.Scope;
+import io.opencensus.exporter.trace.stackdriver.StackdriverTraceConfiguration;
+import io.opencensus.exporter.trace.stackdriver.StackdriverTraceExporter;
+import io.opencensus.trace.Tracer;
+import io.opencensus.trace.Tracing;
 import lombok.extern.log4j.Log4j2;
 import org.mozilla.msrp.platform.common.property.PlatformProperties;
 import org.springframework.context.annotation.Bean;
@@ -18,6 +23,7 @@ import java.io.IOException;
 @Log4j2
 @Configuration
 public class FirebaseConfiguration {
+    private static final Tracer tracer = Tracing.getTracer();
 
     /**
      * The Application Default Credentials are available if running in Google App Engine.
@@ -27,10 +33,22 @@ public class FirebaseConfiguration {
      */
     @Bean
     public GoogleCredentials googleApplicationCredentials() throws IOException {
+        createAndRegisterGoogleCloudPlatform();
+        GoogleCredentials credentials;
         log.info(" --- Bean Creation GoogleCredentials ---");
-        GoogleCredentials credentials = GoogleCredentials.getApplicationDefault();
+        try (Scope ss = tracer.spanBuilder("GoogleCredentials").startScopedSpan()) {
+            tracer.getCurrentSpan().addAnnotation("GoogleCredentials -----start");
+            credentials = GoogleCredentials.getApplicationDefault();
+            tracer.getCurrentSpan().addAnnotation("GoogleCredentials -----end");
+        }
         log.info("GoogleCredentials is created successfully.");
         return credentials;
+    }
+
+    public static void createAndRegisterGoogleCloudPlatform() throws IOException {
+        StackdriverTraceExporter.createAndRegister(
+                StackdriverTraceConfiguration.builder()
+                        .build());
     }
 
     @Bean("FirebaseApp")

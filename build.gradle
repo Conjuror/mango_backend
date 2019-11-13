@@ -70,6 +70,11 @@ dependencies {
     implementation "com.fasterxml.jackson.module:jackson-module-kotlin:2.9.+"
     implementation 'com.squareup.retrofit2:converter-simplexml:2.1.0'
 
+    // StackDriver Tracing API
+    implementation 'io.opencensus:opencensus-api:0.12.2'
+    implementation 'io.opencensus:opencensus-exporter-trace-stackdriver:0.12.2'
+    runtime 'io.opencensus:opencensus-impl:0.12.2'
+
     implementation "com.google.guava:guava:28.1-jre"
     // Lombok
     compileOnly "org.projectlombok:lombok:1.18.8"
@@ -162,7 +167,7 @@ ext.getGaeWebXmlConfig = {
         '''
 
     if (mode == 'dev') {
-        sgaeInstanceClass = 'F4_1G'
+        gaeInstanceClass = 'F4_1G'
         maxInstances = '24'
         minInstances = '8'
     } else if (mode == 'stable') {
