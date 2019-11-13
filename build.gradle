@@ -163,7 +163,11 @@ ext.getGaeWebXmlConfig = {
             <property name="spring.profiles.active" value="dev" />
         '''
 
-    if (mode == 'stable') {
+    if (mode == 'dev') {
+        sgaeInstanceClass = 'F4_1G'
+        maxInstances = '24'
+        minInstances = '8'
+    } else if (mode == 'stable') {
         springProfilesActive = ''' 
             <property name="spring.profiles.active" value="stable" />
         '''
