@@ -3,9 +3,11 @@ package org.mozilla.msrp.platform.vertical.video
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import org.mozilla.msrp.platform.util.logger
+import org.mozilla.msrp.platform.vertical.VerticalApiInfo
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.util.concurrent.TimeUnit
@@ -16,14 +18,23 @@ class VideoController @Inject constructor(
         private val youtubeService: YoutubeService
 ) {
 
+    @Inject
+    lateinit var verticalApiInfo: VerticalApiInfo
+
     private val log = logger()
 
     @GetMapping("/api/v1/video")
     internal fun videoListByKeyword(
+            @RequestHeader(value = "X-API-Key") apiKey: String?,
             @RequestParam(value = "query") query: String,
             @RequestParam(value = "locale") locale: String,
             @RequestParam(value = "limit", required = false, defaultValue = "") limit: String
     ): ResponseEntity<List<VideoItem>> {
+
+        if (apiKey.isNullOrEmpty() || apiKey != verticalApiInfo.clientApiKey) {
+            log.error("[VIDEO]====unauthorized request")
+            return ResponseEntity(listOf(), HttpStatus.UNAUTHORIZED)
+        }
 
         log.info("[VIDEO]====loading videos [$query][$locale][$limit]")
 
