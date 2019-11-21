@@ -4,6 +4,7 @@ import org.mozilla.msrp.platform.common.getMessageOrEmpty
 import org.mozilla.msrp.platform.common.getMessageOrNull
 import org.mozilla.msrp.platform.common.isProd
 import org.mozilla.msrp.platform.firestore.stringToLocalDateTime
+import org.mozilla.msrp.platform.metrics.Metrics
 import org.mozilla.msrp.platform.mission.qualifier.MissionProgressDoc
 import org.mozilla.msrp.platform.mission.qualifier.MissionQualifier
 import org.mozilla.msrp.platform.redward.RewardRepository
@@ -449,6 +450,7 @@ class MissionService @Inject constructor(
         // This is ugly but I don't have time to re-write `aggregateMissionListItem` right now.
         // TODO: fix the n*n complexity here :(
         joinedMissions.map {
+            Metrics.event(Metrics.EVENT_MISSION_CHECK_IN, "mid:${it.mid}")
             val progressDoc = updateProgress(uid, it.missionType, it.mid, zone, locale)
             for (missionListItem in joinedMissionListItem) {
                 if (missionListItem.mid == progressDoc?.mid) {

@@ -9,6 +9,7 @@ import org.mozilla.msrp.platform.firestore.getBatchIteration
 import org.mozilla.msrp.platform.firestore.getResultsUnchecked
 import org.mozilla.msrp.platform.firestore.getUnchecked
 import org.mozilla.msrp.platform.firestore.stringToLocalDateTime
+import org.mozilla.msrp.platform.metrics.Metrics
 import org.mozilla.msrp.platform.mission.JoinStatus
 import org.mozilla.msrp.platform.mission.MissionDoc
 import org.mozilla.msrp.platform.mission.MissionJoinDoc
@@ -118,7 +119,7 @@ open class RewardRepository @Inject constructor(
                         // update MissionJoinDoc
                         val success = missionRepository.updateMissionJoinDocAfterRedeem(uid, missionType, mid, rewardDocId, transaction)
                         if (success && rewardDoc != null) {
-
+                            Metrics.event(Metrics.EVENT_REDEEM_CONSUMED, "mid:$mid")
                             return@runTransaction RedeemResult.Success(rewardDoc, "Reward consumed! ${info(missionJoinDoc)}")
 
                         } else {

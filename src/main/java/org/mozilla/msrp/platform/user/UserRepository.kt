@@ -8,6 +8,7 @@ import com.google.firebase.auth.FirebaseAuth
 import org.mozilla.msrp.platform.firestore.getResultsUnchecked
 import org.mozilla.msrp.platform.firestore.getUnchecked
 import org.mozilla.msrp.platform.firestore.setUnchecked
+import org.mozilla.msrp.platform.metrics.Metrics
 import org.mozilla.msrp.platform.user.data.UserActivityDoc
 import org.mozilla.msrp.platform.user.data.UserDoc
 import org.mozilla.msrp.platform.util.logger
@@ -82,7 +83,7 @@ class UserRepository @Inject constructor(firestore: Firestore) {
             if (USER_SUSPEND_THRESHOLD == signInCountLast7DAYS) {
                 setUserDocStatus(userDocIdFxA, UserDoc.STATUS_SUSPEND)
                 logUserActivity(userDocIdFxA, UserDoc.STATUS_SUSPEND)
-
+                Metrics.event(Metrics.EVENT_USER_SUSPENDED)
                 logger.info("UserDoc[$userDocIdFxA] has logged in three times per 7 days.")
                 return LoginResponse.UserSuspended("UserDoc[$userDocIdFxA] has logged in three times per 7 days.")
             }

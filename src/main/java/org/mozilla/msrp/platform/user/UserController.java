@@ -3,6 +3,7 @@ package org.mozilla.msrp.platform.user;
 import lombok.extern.log4j.Log4j2;
 import org.json.JSONException;
 import org.mozilla.msrp.platform.common.auth.JwtHelper;
+import org.mozilla.msrp.platform.metrics.Metrics;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -103,11 +104,14 @@ public class UserController {
                 log.info("[login]bind success: login more than three times. User suspended");
                 httpResponse.sendRedirect("/api/v1/done?jwt=" + customToken + "&login_success=true&disabled=true&times=3");
             } else if (loginResponse instanceof LoginResponse.Fail) {
-                log.info("[login]bind fail:" + ((LoginResponse.Fail) loginResponse).getMessage());
+                final String message = ((LoginResponse.Fail) loginResponse).getMessage();
+                Metrics.event(Metrics.EVENT_USER_BIND_FAIL, message);
+                log.info("[login]bind fail:" + message);
                 httpResponse.sendRedirect("/api/v1/done?login_success=false");
             }
 
         } catch (IOException | JSONException e) {
+            Metrics.event(Metrics.EVENT_USER_BIND_FAIL, e.toString());
             log.error("[login][" + state + "] Exception:" + e);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getLocalizedMessage());
         }

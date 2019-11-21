@@ -1,6 +1,7 @@
 package org.mozilla.msrp.platform.redward
 
 import org.mozilla.msrp.platform.common.auth.JwtHelper
+import org.mozilla.msrp.platform.metrics.Metrics
 import org.mozilla.msrp.platform.util.logger
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -57,19 +58,19 @@ class RedeemController @Inject constructor(val rewardRepository: RewardRepositor
                 ResponseEntity(RedeemResponse.Success(redeemResult.rewardCouponDoc), HttpStatus.OK)
             }
             is RedeemResult.UsedUp -> {
-                logger.info(redeemResult.debugInfo)
+                Metrics.event(Metrics.EVENT_REDEEM_FAIL, redeemResult.debugInfo)
                 ResponseEntity(RedeemResponse.Fail(redeemResult.message), HttpStatus.NOT_FOUND)
             }
             is RedeemResult.NotReady -> {
-                logger.info(redeemResult.debugInfo)
+                Metrics.event(Metrics.EVENT_REDEEM_FAIL, redeemResult.debugInfo)
                 ResponseEntity(RedeemResponse.Fail(redeemResult.message), HttpStatus.FORBIDDEN)
             }
             is RedeemResult.InvalidReward -> {
-                logger.info(redeemResult.debugInfo)
+                Metrics.event(Metrics.EVENT_REDEEM_FAIL, redeemResult.debugInfo)
                 ResponseEntity(RedeemResponse.Fail(redeemResult.message), HttpStatus.BAD_REQUEST)
             }
             is RedeemResult.Failure -> {
-                logger.error(redeemResult.debugInfo)
+                Metrics.event(Metrics.EVENT_REDEEM_FAIL, redeemResult.debugInfo)
                 ResponseEntity(RedeemResponse.Fail(redeemResult.message), HttpStatus.INTERNAL_SERVER_ERROR)
             }
         }
